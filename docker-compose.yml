@@ -60,6 +60,8 @@ services:
     restart: unless-stopped
     privileged: true
     cgroup: host
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
     command:
       - -logtostderr
       - -docker=unix:///var/run/docker.sock
@@ -67,9 +69,9 @@ services:
       - -store_container_labels=true
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:rw
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
       - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
+      - ${DOCKER_ROOT_DIR:-/var/lib/docker}:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
 
   cadvisor-auth:

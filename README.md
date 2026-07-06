@@ -73,6 +73,31 @@ docker logs autografana-grafana --tail=100
 docker logs autografana-prometheus --tail=100
 ```
 
+If Prometheus targets are up but container panels have no data, check whether cAdvisor can see Docker:
+
+```bash
+curl -u "$PROMETHEUS_BASIC_USER:$PROMETHEUS_BASIC_PASSWORD" http://localhost:8080/api/v1.3/docker
+```
+
+An empty `{}` means cAdvisor cannot reach the Docker API. Find the Docker socket and root directory:
+
+```bash
+docker context inspect --format '{{json .Endpoints.docker.Host}}'
+docker info --format '{{.DockerRootDir}}'
+```
+
+Then set them in `.env` and restart. If the socket value starts with `unix://`, keep the path part only or paste the full value; `run.sh` normalizes it.
+
+```env
+DOCKER_SOCKET_PATH=/var/run/docker.sock
+DOCKER_ROOT_DIR=/var/lib/docker
+```
+
+```bash
+./run.sh start
+docker compose restart cadvisor cadvisor-auth prometheus grafana
+```
+
 ## Configuration
 
 Edit `.env` after the first run if you want different ports or credentials:
@@ -81,6 +106,8 @@ Edit `.env` after the first run if you want different ports or credentials:
 GRAFANA_PORT=3000
 PROMETHEUS_PORT=9090
 CADVISOR_PORT=8080
+DOCKER_SOCKET_PATH=/var/run/docker.sock
+DOCKER_ROOT_DIR=/var/lib/docker
 GRAFANA_ADMIN_USER=admin
 ```
 

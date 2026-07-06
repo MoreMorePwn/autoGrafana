@@ -75,6 +75,16 @@ set -a
 . ./.env
 set +a
 
+if [ ! -S "${DOCKER_SOCKET_PATH}" ]; then
+  echo "Warning: Docker socket was not found at ${DOCKER_SOCKET_PATH}." >&2
+  echo "cAdvisor will not show container data until DOCKER_SOCKET_PATH in .env points to the Docker socket." >&2
+fi
+
+if [ ! -d "${DOCKER_ROOT_DIR}" ]; then
+  echo "Warning: Docker root directory was not found at ${DOCKER_ROOT_DIR}." >&2
+  echo "Set DOCKER_ROOT_DIR in .env to the value from: docker info --format '{{.DockerRootDir}}'" >&2
+fi
+
 docker compose up -d
 
 cat <<EOF
