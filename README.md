@@ -51,7 +51,7 @@ docker context inspect --format '{{.Endpoints.docker.Host}}'
 docker info --format '{{.DockerRootDir}}'
 ```
 
-It also enables Docker and containerd discovery for cAdvisor, then checks whether cAdvisor exposes container metrics after startup and prints the status in the final output.
+It also enables Docker and containerd discovery for cAdvisor, then checks whether cAdvisor exposes real container cgroups after startup and prints the status in the final output. The dashboard filters out host systemd services such as `docker.service`, `containerd.service`, and `ssh.service`.
 
 ## Stop
 
@@ -88,7 +88,7 @@ If Prometheus targets are up but container panels have no data, check whether cA
 curl -u "$PROMETHEUS_BASIC_USER:$PROMETHEUS_BASIC_PASSWORD" http://localhost:8080/metrics | grep '^container_last_seen'
 ```
 
-Only `id="/"` means cAdvisor can see the host root cgroup but not the containers. Find the Docker socket and root directory:
+Only `id="/"` or host services like `/system.slice/docker.service` means cAdvisor can see host cgroups but not the containers. Find the Docker socket and root directory:
 
 ```bash
 docker context inspect --format '{{json .Endpoints.docker.Host}}'

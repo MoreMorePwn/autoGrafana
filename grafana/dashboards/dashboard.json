@@ -97,9 +97,9 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, container_label_com_docker_compose_project)",
+        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, container_label_com_docker_compose_project)",
         "query": {
-          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, container_label_com_docker_compose_project)",
+          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, container_label_com_docker_compose_project)",
           "refId": "PromStack"
         },
         "refresh": 2,
@@ -122,9 +122,9 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, id)",
+        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, id)",
         "query": {
-          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, id)",
+          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, id)",
           "refId": "PromCont"
         },
         "refresh": 2,
@@ -187,7 +187,7 @@
       },
       "targets": [
         {
-          "expr": "count(count by (id) (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
+          "expr": "count(count by (id) (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
           "refId": "A"
         }
       ],
@@ -242,7 +242,7 @@
       },
       "targets": [
         {
-          "expr": "count((time() - container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}) > 300) or vector(0)",
+          "expr": "count((time() - container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}) > 300) or vector(0)",
           "refId": "A"
         }
       ],
@@ -305,7 +305,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m])))",
+          "expr": "sum(sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m])))",
           "refId": "A"
         }
       ],
@@ -361,7 +361,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
+          "expr": "sum(sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
           "refId": "A"
         }
       ],
@@ -416,7 +416,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])) or vector(0)",
+          "expr": "sum(rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])) or vector(0)",
           "refId": "A"
         }
       ],
@@ -548,7 +548,7 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m])))",
+          "expr": "topk(20, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m])))",
           "instant": true,
           "refId": "A",
           "legendFormat": "{{id}}"
@@ -593,7 +593,7 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
+          "expr": "topk(20, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
           "instant": true,
           "refId": "A",
           "legendFormat": "{{id}}"
@@ -651,19 +651,19 @@
       },
       "targets": [
         {
-          "expr": "sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m]))",
+          "expr": "sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]))",
           "format": "table",
           "instant": true,
           "refId": "A"
         },
         {
-          "expr": "sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"})",
+          "expr": "sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"})",
           "format": "table",
           "instant": true,
           "refId": "B"
         },
         {
-          "expr": "sum by (id) (rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]))",
+          "expr": "sum by (id) (rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]))",
           "format": "table",
           "instant": true,
           "refId": "C"
@@ -786,7 +786,7 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m])))",
+          "expr": "topk(5, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{id}}"
         }
@@ -837,7 +837,7 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
+          "expr": "topk(5, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
           "refId": "A",
           "legendFormat": "{{id}}"
         }
@@ -901,7 +901,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (id) (rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])))",
+          "expr": "topk(10, sum by (id) (rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{id}}"
         }
@@ -953,7 +953,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (id) (rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])))",
+          "expr": "topk(10, sum by (id) (rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{id}}"
         }
@@ -1005,7 +1005,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (id) (rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])))",
+          "expr": "topk(10, sum by (id) (rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{id}}"
         }

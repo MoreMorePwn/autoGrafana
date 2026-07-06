@@ -124,8 +124,14 @@ token = base64.b64encode(f"{username}:{password}".encode()).decode()
 url = f"http://127.0.0.1:{port}/metrics"
 metric = re.compile(r'^container_last_seen\{([^}]*)\}')
 container_id = re.compile(r'id="([^"]*)"')
-container_name = re.compile(r'name="([^"]*)"')
-container_image = re.compile(r'image="([^"]*)"')
+container_cgroup = re.compile(
+    r'(^/docker/[0-9a-f]{12,64}$'
+    r'|^/system\.slice/docker-[0-9a-f]{12,64}\.scope$'
+    r'|.*/kubepods.*'
+    r'|.*/cri-containerd.*'
+    r'|.*/containerd.*[0-9a-f]{12,64}.*'
+    r'|.*/libpod.*)'
+)
 
 for _ in range(30):
     request = urllib.request.Request(url, headers={"Authorization": f"Basic {token}"})
@@ -139,13 +145,7 @@ for _ in range(30):
             labels = match.group(1)
             id_match = container_id.search(labels)
             id_value = id_match.group(1) if id_match else ""
-            name_match = container_name.search(labels)
-            image_match = container_image.search(labels)
-            if name_match and name_match.group(1):
-                sys.exit(0)
-            if image_match and image_match.group(1):
-                sys.exit(0)
-            if re.search(r'(docker|containerd|kubepods|libpod|cri-containerd)', id_value):
+            if container_cgroup.search(id_value):
                 sys.exit(0)
     except (OSError, urllib.error.URLError):
         pass
