@@ -1,0 +1,8 @@
+.env
+.data/
+monitoring/generated/*
+!monitoring/generated/.gitkeep
+!monitoring/generated/grafana-datasources/
+monitoring/generated/grafana-datasources/*
+!monitoring/generated/grafana-datasources/.gitkeep
+*.log

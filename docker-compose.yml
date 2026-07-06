@@ -1,0 +1,84 @@
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: autografana-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.config.file=/etc/prometheus/web.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./monitoring/generated/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/generated/prometheus-web.yml:/etc/prometheus/web.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - cadvisor-auth
+      - node-exporter
+
+  grafana:
+    image: grafana/grafana
+    container_name: autografana-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/generated/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: autografana-cadvisor
+    restart: unless-stopped
+    privileged: true
+    cgroup: host
+    command:
+      - -logtostderr
+      - -docker=unix:///var/run/docker.sock
+      - -docker_only=true
+      - -store_container_labels=true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+  cadvisor-auth:
+    image: nginx:stable
+    container_name: autografana-cadvisor-auth
+    restart: unless-stopped
+    volumes:
+      - ./conf/nginx/cadvisor-auth.conf:/etc/nginx/nginx.conf:ro
+      - ./monitoring/generated/cadvisor.htpasswd:/etc/nginx/.htpasswd:ro
+    ports:
+      - "${CADVISOR_PORT:-8080}:8080"
+    depends_on:
+      - cadvisor
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: autografana-node-exporter
+    restart: unless-stopped
+    pid: host
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+volumes:
+  grafana-data:
+  prometheus-data:
