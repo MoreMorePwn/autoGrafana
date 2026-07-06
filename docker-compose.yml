@@ -101,6 +101,8 @@ services:
     environment:
       - DOCKER_SOCKET=/var/run/docker.sock
       - LISTEN_PORT=9101
+      - DOCKER_TIMEOUT_SECONDS=3
+      - REFRESH_INTERVAL_SECONDS=5
     volumes:
       - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
 

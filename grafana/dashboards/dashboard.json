@@ -97,9 +97,9 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(autografana_container_info, compose_project)",
+        "definition": "label_values(autografana_container_info{state=\"running\"}, compose_project)",
         "query": {
-          "query": "label_values(autografana_container_info, compose_project)",
+          "query": "label_values(autografana_container_info{state=\"running\"}, compose_project)",
           "refId": "ContainerStack"
         },
         "refresh": 2,
@@ -122,9 +122,9 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(autografana_container_info{compose_project=~\"$stack\"}, container_name)",
+        "definition": "label_values(autografana_container_info{state=\"running\", compose_project=~\"$stack\"}, container_name)",
         "query": {
-          "query": "label_values(autografana_container_info{compose_project=~\"$stack\"}, container_name)",
+          "query": "label_values(autografana_container_info{state=\"running\", compose_project=~\"$stack\"}, container_name)",
           "refId": "ContainerName"
         },
         "refresh": 2,
@@ -187,7 +187,7 @@
       },
       "targets": [
         {
-          "expr": "count(count by (container_name) ((container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "count(count by (container_name) ((container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -243,7 +243,7 @@
       },
       "targets": [
         {
-          "expr": "count((time() - (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})) > 300) or vector(0)",
+          "expr": "count((time() - (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})) > 300) or vector(0)",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -307,7 +307,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "sum(sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -364,7 +364,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "sum(sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -420,7 +420,7 @@
       },
       "targets": [
         {
-          "expr": "sum((rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})) or vector(0)",
+          "expr": "sum((rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})) or vector(0)",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -553,7 +553,7 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(20, sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "instant": true,
           "refId": "A",
           "legendFormat": "{{container_name}}"
@@ -598,7 +598,7 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(20, sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "instant": true,
           "refId": "A",
           "legendFormat": "{{container_name}}"
@@ -656,21 +656,21 @@
       },
       "targets": [
         {
-          "expr": "sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"}))",
+          "expr": "sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}))",
           "format": "table",
           "instant": true,
           "refId": "A",
           "legendFormat": "{{container_name}}"
         },
         {
-          "expr": "sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"}))",
+          "expr": "sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}))",
           "format": "table",
           "instant": true,
           "refId": "B",
           "legendFormat": "{{container_name}}"
         },
         {
-          "expr": "sum by (container_name) ((rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"}))",
+          "expr": "sum by (container_name) ((rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}))",
           "format": "table",
           "instant": true,
           "refId": "C",
@@ -794,7 +794,7 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(5, sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -845,7 +845,7 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(5, sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -909,7 +909,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_receive_bytes_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
+          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_receive_bytes_total{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -961,7 +961,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_transmit_bytes_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
+          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_transmit_bytes_total{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -1013,7 +1013,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_receive_errors_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_transmit_errors_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_receive_packets_dropped_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_transmit_packets_dropped_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
+          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_receive_errors_total{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_transmit_errors_total{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_receive_packets_dropped_total{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_transmit_packets_dropped_total{state=\"running\", container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
