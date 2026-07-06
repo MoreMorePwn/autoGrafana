@@ -44,6 +44,15 @@ After startup, the script prints all local URLs and credentials. The credentials
 
 `new` removes the previous autoGrafana containers, networks, and named volumes, deletes generated credentials/config, then creates a fresh instance.
 
+During a fresh run, `run.sh` auto-detects the local Docker socket and Docker root directory from:
+
+```bash
+docker context inspect --format '{{.Endpoints.docker.Host}}'
+docker info --format '{{.DockerRootDir}}'
+```
+
+It also checks whether cAdvisor can read the Docker API after startup and prints the status in the final output.
+
 ## Stop
 
 ```bash
@@ -106,6 +115,7 @@ Edit `.env` after the first run if you want different ports or credentials:
 GRAFANA_PORT=3000
 PROMETHEUS_PORT=9090
 CADVISOR_PORT=8080
+CADVISOR_IMAGE=gcr.io/cadvisor/cadvisor:v0.55.1
 DOCKER_SOCKET_PATH=/var/run/docker.sock
 DOCKER_ROOT_DIR=/var/lib/docker
 GRAFANA_ADMIN_USER=admin

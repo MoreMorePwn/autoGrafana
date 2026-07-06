@@ -55,7 +55,7 @@ services:
         condition: service_started
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: ${CADVISOR_IMAGE:-gcr.io/cadvisor/cadvisor:v0.55.1}
     container_name: autografana-cadvisor
     restart: unless-stopped
     privileged: true

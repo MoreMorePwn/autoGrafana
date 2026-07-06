@@ -60,12 +60,24 @@ fi
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-autografana}"
 
 if [ "${reset}" = true ]; then
+  fresh_compose_project="${COMPOSE_PROJECT_NAME:-autografana}"
   echo "Removing previous autoGrafana containers, networks, and volumes..."
   docker compose down -v --remove-orphans || true
   rm -rf monitoring/generated .env
   mkdir -p monitoring/generated/grafana-datasources
   : > monitoring/generated/.gitkeep
   : > monitoring/generated/grafana-datasources/.gitkeep
+  unset GRAFANA_PORT
+  unset PROMETHEUS_PORT
+  unset CADVISOR_PORT
+  unset CADVISOR_IMAGE
+  unset DOCKER_SOCKET_PATH
+  unset DOCKER_ROOT_DIR
+  unset GRAFANA_ADMIN_USER
+  unset GRAFANA_ADMIN_PASSWORD
+  unset PROMETHEUS_BASIC_USER
+  unset PROMETHEUS_BASIC_PASSWORD
+  export COMPOSE_PROJECT_NAME="${fresh_compose_project}"
 fi
 
 bash monitoring/generate-config.sh --quiet
@@ -85,7 +97,44 @@ if [ ! -d "${DOCKER_ROOT_DIR}" ]; then
   echo "Set DOCKER_ROOT_DIR in .env to the value from: docker info --format '{{.DockerRootDir}}'" >&2
 fi
 
-docker compose up -d
+if [ "${reset}" = true ]; then
+  docker compose up -d --force-recreate
+else
+  docker compose up -d
+fi
+
+cadvisor_docker_status="unknown"
+if python3 - "${CADVISOR_PORT}" "${PROMETHEUS_BASIC_USER}" "${PROMETHEUS_BASIC_PASSWORD}" <<'PY'
+import base64
+import json
+import sys
+import time
+import urllib.error
+import urllib.request
+
+port, username, password = sys.argv[1:4]
+token = base64.b64encode(f"{username}:{password}".encode()).decode()
+url = f"http://127.0.0.1:{port}/api/v1.3/docker"
+
+for _ in range(30):
+    request = urllib.request.Request(url, headers={"Authorization": f"Basic {token}"})
+    try:
+        with urllib.request.urlopen(request, timeout=2) as response:
+            payload = response.read().decode()
+        data = json.loads(payload)
+        if isinstance(data, dict) and len(data) > 0:
+            sys.exit(0)
+    except (OSError, urllib.error.URLError, json.JSONDecodeError):
+        pass
+    time.sleep(2)
+
+sys.exit(1)
+PY
+then
+  cadvisor_docker_status="connected"
+else
+  cadvisor_docker_status="not reporting Docker containers"
+fi
 
 cat <<EOF
 
@@ -103,5 +152,25 @@ Prometheus and cAdvisor basic auth:
   username: ${PROMETHEUS_BASIC_USER}
   password: ${PROMETHEUS_BASIC_PASSWORD}
 
+Docker paths used by cAdvisor:
+  socket: ${DOCKER_SOCKET_PATH}
+  root: ${DOCKER_ROOT_DIR}
+  Docker API status: ${cadvisor_docker_status}
+
 Credentials are stored locally in .env.
 EOF
+
+if [ "${cadvisor_docker_status}" != "connected" ]; then
+  cat >&2 <<EOF
+
+Warning: cAdvisor is running but is not reporting Docker containers.
+Container panels in Grafana may be empty until cAdvisor can read the Docker API.
+
+Check these host values:
+  docker context inspect --format '{{.Endpoints.docker.Host}}'
+  docker info --format '{{.DockerRootDir}}'
+
+Then run:
+  ./run.sh new
+EOF
+fi
