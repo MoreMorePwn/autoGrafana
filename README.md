@@ -25,12 +25,14 @@ The cAdvisor and node-exporter containers mount host paths such as `/var/run`, `
 
 ## Run
 
+Run `./run.sh` with no arguments to print command help.
+
 ```bash
 chmod +x run.sh monitoring/generate-config.sh
-./run.sh
+./run.sh start
 ```
 
-The script creates `.env`, generates Prometheus/cAdvisor auth files under `monitoring/generated`, and starts the Compose stack.
+`start` creates `.env` if it does not exist, generates Prometheus/cAdvisor auth files under `monitoring/generated`, and starts the Compose stack with the current local data.
 
 After startup, the script prints all local URLs and credentials. The credentials are stored in `.env`, which is intentionally ignored by Git.
 
@@ -65,7 +67,7 @@ CADVISOR_PORT=8080
 GRAFANA_ADMIN_USER=admin
 ```
 
-Run `./run.sh` again after editing `.env` to regenerate the Prometheus and Grafana datasource config from those values.
+Run `./run.sh start` again after editing `.env` to regenerate the Prometheus and Grafana datasource config from those values.
 
 ## Git-tracked vs generated files
 
@@ -76,4 +78,3 @@ Generated and local-only files are ignored:
 - `.env`
 - `monitoring/generated/*`
 - Docker named volumes managed by Compose
-

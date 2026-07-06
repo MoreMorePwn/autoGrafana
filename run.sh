@@ -6,12 +6,13 @@ cd "$(dirname "$0")"
 usage() {
   cat <<'EOF'
 Usage:
-  ./run.sh        Generate missing config and start the monitoring stack.
-  ./run.sh new    Delete the previous autoGrafana instance and start fresh.
+  ./run.sh          Show this help.
+  ./run.sh start    Generate missing config and start the monitoring stack.
+  ./run.sh new      Delete the previous autoGrafana instance and start fresh.
 EOF
 }
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+if [ "$#" -eq 0 ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   usage
   exit 0
 fi
@@ -23,7 +24,7 @@ fi
 
 reset=false
 case "${1:-}" in
-  "")
+  start)
     ;;
   new)
     reset=true
