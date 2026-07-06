@@ -1,7 +1,7 @@
 {
   "uid": "containers-fleet-cadvisor",
   "title": "Container fleet (cAdvisor)",
-  "description": "High-cardinality friendly overview: filter by job, scrape instance, Compose stack, and container name. Focuses on named workloads with an image label (excludes host/systemd cgroups without images).",
+  "description": "High-cardinality friendly overview: filter by job, scrape instance, Compose stack, and container id. Focuses on named workloads with an image label (excludes host/systemd cgroups without images).",
   "timezone": "browser",
   "schemaVersion": 42,
   "version": 5,
@@ -97,9 +97,9 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", name!=\"\", image!=\"\"}, container_label_com_docker_compose_project)",
+        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, container_label_com_docker_compose_project)",
         "query": {
-          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", name!=\"\", image!=\"\"}, container_label_com_docker_compose_project)",
+          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, container_label_com_docker_compose_project)",
           "refId": "PromStack"
         },
         "refresh": 2,
@@ -117,14 +117,14 @@
       {
         "name": "container",
         "type": "query",
-        "label": "Container name",
+        "label": "container id",
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", container_label_com_docker_compose_project=~\"$stack\", name!=\"\", image!=\"\"}, name)",
+        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, id)",
         "query": {
-          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", container_label_com_docker_compose_project=~\"$stack\", name!=\"\", image!=\"\"}, name)",
+          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id!=\"/\"}, id)",
           "refId": "PromCont"
         },
         "refresh": 2,
@@ -174,7 +174,7 @@
       "type": "stat",
       "id": 2,
       "title": "Running containers",
-      "description": "Count of distinct container names with an image (Docker-style workloads).",
+      "description": "Count of distinct container ids with an image (Docker-style workloads).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -187,7 +187,7 @@
       },
       "targets": [
         {
-          "expr": "count(count by (name) (container_last_seen{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}))",
+          "expr": "count(count by (id) (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
           "refId": "A"
         }
       ],
@@ -242,7 +242,7 @@
       },
       "targets": [
         {
-          "expr": "count((time() - container_last_seen{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}) > 300) or vector(0)",
+          "expr": "count((time() - container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}) > 300) or vector(0)",
           "refId": "A"
         }
       ],
@@ -305,7 +305,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (name) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\", cpu=\"total\"}[5m])))",
+          "expr": "sum(sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m])))",
           "refId": "A"
         }
       ],
@@ -361,7 +361,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (name) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}))",
+          "expr": "sum(sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
           "refId": "A"
         }
       ],
@@ -416,7 +416,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m])) or vector(0)",
+          "expr": "sum(rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])) or vector(0)",
           "refId": "A"
         }
       ],
@@ -534,7 +534,7 @@
     {
       "type": "bargauge",
       "id": 9,
-      "title": "Top 20 CPU by container name (cores)",
+      "title": "Top 20 CPU by container id (cores)",
       "description": "Instant snapshot of highest CPU usage after filters.",
       "datasource": {
         "type": "prometheus",
@@ -548,10 +548,10 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (name) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\", cpu=\"total\"}[5m])))",
+          "expr": "topk(20, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m])))",
           "instant": true,
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {
@@ -580,7 +580,7 @@
     {
       "type": "bargauge",
       "id": 10,
-      "title": "Top 20 memory by container name (working set)",
+      "title": "Top 20 memory by container id (working set)",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -593,10 +593,10 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (name) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}))",
+          "expr": "topk(20, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
           "instant": true,
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {
@@ -637,8 +637,8 @@
     {
       "type": "table",
       "id": 19,
-      "title": "Containers by name (merged metrics)",
-      "description": "Instant snapshot per container name. Use column sort to find outliers.",
+      "title": "Containers by id (merged metrics)",
+      "description": "Instant snapshot per container id. Use column sort to find outliers.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -651,19 +651,19 @@
       },
       "targets": [
         {
-          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\", cpu=\"total\"}[5m]))",
+          "expr": "sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m]))",
           "format": "table",
           "instant": true,
           "refId": "A"
         },
         {
-          "expr": "sum by (name) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"})",
+          "expr": "sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"})",
           "format": "table",
           "instant": true,
           "refId": "B"
         },
         {
-          "expr": "sum by (name) (rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m]))",
+          "expr": "sum by (id) (rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]))",
           "format": "table",
           "instant": true,
           "refId": "C"
@@ -684,7 +684,7 @@
               "Value #A": "CPU (cores)",
               "Value #B": "Memory (working set)",
               "Value #C": "OOM / s",
-              "name": "Container name"
+              "name": "Container id"
             }
           }
         }
@@ -772,7 +772,7 @@
     {
       "type": "timeseries",
       "id": 21,
-      "title": "CPU by container name (top 5)",
+      "title": "CPU by container id (top 5)",
       "description": "Limits legend noise by plotting only the five highest CPU consumers.",
       "datasource": {
         "type": "prometheus",
@@ -786,9 +786,9 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (name) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\", cpu=\"total\"}[5m])))",
+          "expr": "topk(5, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\", cpu=\"total\"}[5m])))",
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {
@@ -824,7 +824,7 @@
     {
       "type": "timeseries",
       "id": 22,
-      "title": "Memory by container name (top 5)",
+      "title": "Memory by container id (top 5)",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -837,9 +837,9 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (name) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}))",
+          "expr": "topk(5, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}))",
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {
@@ -901,9 +901,9 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (name) (rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m])))",
+          "expr": "topk(10, sum by (id) (rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])))",
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {
@@ -953,9 +953,9 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (name) (rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m])))",
+          "expr": "topk(10, sum by (id) (rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])))",
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {
@@ -1005,9 +1005,9 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (name) (rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", name=~\"$container\", name!=\"\", image!=\"\", container_label_com_docker_compose_project=~\"$stack\"}[5m])))",
+          "expr": "topk(10, sum by (id) (rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id!=\"/\"}[5m])))",
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "{{id}}"
         }
       ],
       "fieldConfig": {

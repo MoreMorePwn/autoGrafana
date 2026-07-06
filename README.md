@@ -51,7 +51,7 @@ docker context inspect --format '{{.Endpoints.docker.Host}}'
 docker info --format '{{.DockerRootDir}}'
 ```
 
-It also checks whether cAdvisor can read the Docker API after startup and prints the status in the final output.
+It also enables Docker and containerd discovery for cAdvisor, then checks whether cAdvisor exposes container metrics after startup and prints the status in the final output.
 
 ## Stop
 
@@ -82,13 +82,13 @@ docker logs autografana-grafana --tail=100
 docker logs autografana-prometheus --tail=100
 ```
 
-If Prometheus targets are up but container panels have no data, check whether cAdvisor can see Docker:
+If Prometheus targets are up but container panels have no data, check whether cAdvisor exposes non-root container metrics:
 
 ```bash
-curl -u "$PROMETHEUS_BASIC_USER:$PROMETHEUS_BASIC_PASSWORD" http://localhost:8080/api/v1.3/docker
+curl -u "$PROMETHEUS_BASIC_USER:$PROMETHEUS_BASIC_PASSWORD" http://localhost:8080/metrics | grep '^container_last_seen'
 ```
 
-An empty `{}` means cAdvisor cannot reach the Docker API. Find the Docker socket and root directory:
+Only `id="/"` means cAdvisor can see the host root cgroup but not the containers. Find the Docker socket and root directory:
 
 ```bash
 docker context inspect --format '{{json .Endpoints.docker.Host}}'
@@ -99,7 +99,10 @@ Then set them in `.env` and restart. If the socket value starts with `unix://`, 
 
 ```env
 DOCKER_SOCKET_PATH=/var/run/docker.sock
+DOCKER_RUN_DIR=/var/run
 DOCKER_ROOT_DIR=/var/lib/docker
+CONTAINERD_NAMESPACE=moby
+CONTAINERD_ROOT_DIR=/var/lib/containerd
 ```
 
 ```bash

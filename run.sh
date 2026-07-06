@@ -72,7 +72,10 @@ if [ "${reset}" = true ]; then
   unset CADVISOR_PORT
   unset CADVISOR_IMAGE
   unset DOCKER_SOCKET_PATH
+  unset DOCKER_RUN_DIR
   unset DOCKER_ROOT_DIR
+  unset CONTAINERD_NAMESPACE
+  unset CONTAINERD_ROOT_DIR
   unset GRAFANA_ADMIN_USER
   unset GRAFANA_ADMIN_PASSWORD
   unset PROMETHEUS_BASIC_USER
@@ -97,16 +100,20 @@ if [ ! -d "${DOCKER_ROOT_DIR}" ]; then
   echo "Set DOCKER_ROOT_DIR in .env to the value from: docker info --format '{{.DockerRootDir}}'" >&2
 fi
 
+if [ ! -d "${CONTAINERD_ROOT_DIR}" ]; then
+  echo "Warning: containerd root directory was not found at ${CONTAINERD_ROOT_DIR}." >&2
+fi
+
 if [ "${reset}" = true ]; then
   docker compose up -d --force-recreate
 else
   docker compose up -d
 fi
 
-cadvisor_docker_status="unknown"
+cadvisor_container_status="unknown"
 if python3 - "${CADVISOR_PORT}" "${PROMETHEUS_BASIC_USER}" "${PROMETHEUS_BASIC_PASSWORD}" <<'PY'
 import base64
-import json
+import re
 import sys
 import time
 import urllib.error
@@ -114,26 +121,42 @@ import urllib.request
 
 port, username, password = sys.argv[1:4]
 token = base64.b64encode(f"{username}:{password}".encode()).decode()
-url = f"http://127.0.0.1:{port}/api/v1.3/docker"
+url = f"http://127.0.0.1:{port}/metrics"
+metric = re.compile(r'^container_last_seen\{([^}]*)\}')
+container_id = re.compile(r'id="([^"]*)"')
+container_name = re.compile(r'name="([^"]*)"')
+container_image = re.compile(r'image="([^"]*)"')
 
 for _ in range(30):
     request = urllib.request.Request(url, headers={"Authorization": f"Basic {token}"})
     try:
         with urllib.request.urlopen(request, timeout=2) as response:
-            payload = response.read().decode()
-        data = json.loads(payload)
-        if isinstance(data, dict) and len(data) > 0:
-            sys.exit(0)
-    except (OSError, urllib.error.URLError, json.JSONDecodeError):
+            payload = response.read().decode(errors="replace")
+        for line in payload.splitlines():
+            match = metric.match(line)
+            if not match:
+                continue
+            labels = match.group(1)
+            id_match = container_id.search(labels)
+            id_value = id_match.group(1) if id_match else ""
+            name_match = container_name.search(labels)
+            image_match = container_image.search(labels)
+            if name_match and name_match.group(1):
+                sys.exit(0)
+            if image_match and image_match.group(1):
+                sys.exit(0)
+            if re.search(r'(docker|containerd|kubepods|libpod|cri-containerd)', id_value):
+                sys.exit(0)
+    except (OSError, urllib.error.URLError):
         pass
     time.sleep(2)
 
 sys.exit(1)
 PY
 then
-  cadvisor_docker_status="connected"
+  cadvisor_container_status="container metrics detected"
 else
-  cadvisor_docker_status="not reporting Docker containers"
+  cadvisor_container_status="no container metrics detected"
 fi
 
 cat <<EOF
@@ -154,17 +177,20 @@ Prometheus and cAdvisor basic auth:
 
 Docker paths used by cAdvisor:
   socket: ${DOCKER_SOCKET_PATH}
+  run dir: ${DOCKER_RUN_DIR}
   root: ${DOCKER_ROOT_DIR}
-  Docker API status: ${cadvisor_docker_status}
+  containerd namespace: ${CONTAINERD_NAMESPACE}
+  containerd root: ${CONTAINERD_ROOT_DIR}
+  cAdvisor container metrics: ${cadvisor_container_status}
 
 Credentials are stored locally in .env.
 EOF
 
-if [ "${cadvisor_docker_status}" != "connected" ]; then
+if [ "${cadvisor_container_status}" != "container metrics detected" ]; then
   cat >&2 <<EOF
 
-Warning: cAdvisor is running but is not reporting Docker containers.
-Container panels in Grafana may be empty until cAdvisor can read the Docker API.
+Warning: cAdvisor is running but is not reporting container metrics.
+Container panels in Grafana may be empty until cAdvisor can read Docker or containerd.
 
 Check these host values:
   docker context inspect --format '{{.Endpoints.docker.Host}}'
