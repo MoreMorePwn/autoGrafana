@@ -8,6 +8,7 @@ autoGrafana is a small Docker Compose monitoring stack modeled after the monitor
 - Prometheus on `http://localhost:9090` with basic auth
 - cAdvisor on `http://localhost:8080` behind an nginx basic-auth proxy
 - node-exporter for host-level metrics used by Prometheus
+- container-name-exporter for Docker container name metadata used by Grafana
 
 Grafana is provisioned automatically with:
 
@@ -51,7 +52,7 @@ docker context inspect --format '{{.Endpoints.docker.Host}}'
 docker info --format '{{.DockerRootDir}}'
 ```
 
-It also enables Docker and containerd discovery for cAdvisor, then checks whether cAdvisor exposes real container cgroups after startup and prints the status in the final output. The dashboard filters out host systemd services such as `docker.service`, `containerd.service`, and `ssh.service`.
+It also enables Docker and containerd discovery for cAdvisor, builds the local container-name exporter, then checks whether cAdvisor exposes real container cgroups after startup and prints the status in the final output. The dashboard joins cAdvisor metrics to Docker metadata so panels show container names instead of cgroup paths.
 
 ## Stop
 

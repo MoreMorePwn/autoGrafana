@@ -6,3 +6,5 @@ monitoring/generated/*
 monitoring/generated/grafana-datasources/*
 !monitoring/generated/grafana-datasources/.gitkeep
 *.log
+__pycache__/
+*.py[cod]

@@ -1,7 +1,7 @@
 {
   "uid": "containers-fleet-cadvisor",
   "title": "Container fleet (cAdvisor)",
-  "description": "High-cardinality friendly overview: filter by job, scrape instance, Compose stack, and container id. Focuses on named workloads with an image label (excludes host/systemd cgroups without images).",
+  "description": "High-cardinality friendly overview: filter by job, scrape instance, Compose stack, and container name. Focuses on named workloads with an image label (excludes host/systemd cgroups without images).",
   "timezone": "browser",
   "schemaVersion": 42,
   "version": 5,
@@ -97,10 +97,10 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, container_label_com_docker_compose_project)",
+        "definition": "label_values(autografana_container_info, compose_project)",
         "query": {
-          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, container_label_com_docker_compose_project)",
-          "refId": "PromStack"
+          "query": "label_values(autografana_container_info, compose_project)",
+          "refId": "ContainerStack"
         },
         "refresh": 2,
         "multi": true,
@@ -117,15 +117,15 @@
       {
         "name": "container",
         "type": "query",
-        "label": "container id",
+        "label": "container name",
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, id)",
+        "definition": "label_values(autografana_container_info{compose_project=~\"$stack\"}, container_name)",
         "query": {
-          "query": "label_values(container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}, id)",
-          "refId": "PromCont"
+          "query": "label_values(autografana_container_info{compose_project=~\"$stack\"}, container_name)",
+          "refId": "ContainerName"
         },
         "refresh": 2,
         "multi": true,
@@ -174,7 +174,7 @@
       "type": "stat",
       "id": 2,
       "title": "Running containers",
-      "description": "Count of distinct container ids with an image (Docker-style workloads).",
+      "description": "Count of distinct container names with an image (Docker-style workloads).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -187,8 +187,9 @@
       },
       "targets": [
         {
-          "expr": "count(count by (id) (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
-          "refId": "A"
+          "expr": "count(count by (container_name) ((container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "refId": "A",
+          "legendFormat": "{{container_name}}"
         }
       ],
       "options": {
@@ -242,8 +243,9 @@
       },
       "targets": [
         {
-          "expr": "count((time() - container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}) > 300) or vector(0)",
-          "refId": "A"
+          "expr": "count((time() - (container_last_seen{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})) > 300) or vector(0)",
+          "refId": "A",
+          "legendFormat": "{{container_name}}"
         }
       ],
       "options": {
@@ -305,8 +307,9 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m])))",
-          "refId": "A"
+          "expr": "sum(sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "refId": "A",
+          "legendFormat": "{{container_name}}"
         }
       ],
       "options": {
@@ -361,8 +364,9 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
-          "refId": "A"
+          "expr": "sum(sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "refId": "A",
+          "legendFormat": "{{container_name}}"
         }
       ],
       "options": {
@@ -416,8 +420,9 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])) or vector(0)",
-          "refId": "A"
+          "expr": "sum((rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})) or vector(0)",
+          "refId": "A",
+          "legendFormat": "{{container_name}}"
         }
       ],
       "options": {
@@ -534,7 +539,7 @@
     {
       "type": "bargauge",
       "id": 9,
-      "title": "Top 20 CPU by container id (cores)",
+      "title": "Top 20 CPU by container name (cores)",
       "description": "Instant snapshot of highest CPU usage after filters.",
       "datasource": {
         "type": "prometheus",
@@ -548,10 +553,10 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m])))",
+          "expr": "topk(20, sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "instant": true,
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {
@@ -580,7 +585,7 @@
     {
       "type": "bargauge",
       "id": 10,
-      "title": "Top 20 memory by container id (working set)",
+      "title": "Top 20 memory by container name (working set)",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -593,10 +598,10 @@
       },
       "targets": [
         {
-          "expr": "topk(20, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
+          "expr": "topk(20, sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "instant": true,
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {
@@ -637,8 +642,8 @@
     {
       "type": "table",
       "id": 19,
-      "title": "Containers by id (merged metrics)",
-      "description": "Instant snapshot per container id. Use column sort to find outliers.",
+      "title": "Containers by name (merged metrics)",
+      "description": "Instant snapshot per container name. Use column sort to find outliers.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -651,22 +656,25 @@
       },
       "targets": [
         {
-          "expr": "sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]))",
+          "expr": "sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"}))",
           "format": "table",
           "instant": true,
-          "refId": "A"
+          "refId": "A",
+          "legendFormat": "{{container_name}}"
         },
         {
-          "expr": "sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"})",
+          "expr": "sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"}))",
           "format": "table",
           "instant": true,
-          "refId": "B"
+          "refId": "B",
+          "legendFormat": "{{container_name}}"
         },
         {
-          "expr": "sum by (id) (rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]))",
+          "expr": "sum by (container_name) ((rate(container_oom_events_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"}))",
           "format": "table",
           "instant": true,
-          "refId": "C"
+          "refId": "C",
+          "legendFormat": "{{container_name}}"
         }
       ],
       "transformations": [
@@ -684,7 +692,7 @@
               "Value #A": "CPU (cores)",
               "Value #B": "Memory (working set)",
               "Value #C": "OOM / s",
-              "name": "Container id"
+              "container_name": "Container name"
             }
           }
         }
@@ -772,7 +780,7 @@
     {
       "type": "timeseries",
       "id": 21,
-      "title": "CPU by container id (top 5)",
+      "title": "CPU by container name (top 5)",
       "description": "Limits legend noise by plotting only the five highest CPU consumers.",
       "datasource": {
         "type": "prometheus",
@@ -786,9 +794,9 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (id) (rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m])))",
+          "expr": "topk(5, sum by (container_name) ((rate(container_cpu_usage_seconds_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\", cpu=\"total\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {
@@ -824,7 +832,7 @@
     {
       "type": "timeseries",
       "id": 22,
-      "title": "Memory by container id (top 5)",
+      "title": "Memory by container name (top 5)",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -837,9 +845,9 @@
       },
       "targets": [
         {
-          "expr": "topk(5, sum by (id) (container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}))",
+          "expr": "topk(5, sum by (container_name) ((container_memory_working_set_bytes{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"} * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {
@@ -901,9 +909,9 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (id) (rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])))",
+          "expr": "topk(10, sum by (container_name) ((rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {
@@ -953,9 +961,9 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (id) (rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])))",
+          "expr": "topk(10, sum by (container_name) ((rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {
@@ -1005,9 +1013,9 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (id) (rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"$container\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])))",
+          "expr": "topk(10, sum by (container_name) (((rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
           "refId": "A",
-          "legendFormat": "{{id}}"
+          "legendFormat": "{{container_name}}"
         }
       ],
       "fieldConfig": {

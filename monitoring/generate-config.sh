@@ -264,6 +264,11 @@ scrape_configs:
     scrape_interval: 5s
     static_configs:
       - targets: ["node-exporter:9100"]
+
+  - job_name: "container-name-exporter"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["container-name-exporter:9101"]
 EOF
 
 cat > "${grafana_datasource_config}" <<EOF

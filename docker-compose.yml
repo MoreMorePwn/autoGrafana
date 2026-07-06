@@ -30,6 +30,8 @@ services:
         condition: service_completed_successfully
       cadvisor-auth:
         condition: service_started
+      container-name-exporter:
+        condition: service_started
       node-exporter:
         condition: service_started
 
@@ -91,6 +93,16 @@ services:
       - "${CADVISOR_PORT:-8080}:8080"
     depends_on:
       - cadvisor
+
+  container-name-exporter:
+    build: ./exporters/container-name-exporter
+    container_name: autografana-container-name-exporter
+    restart: unless-stopped
+    environment:
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - LISTEN_PORT=9101
+    volumes:
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
 
   node-exporter:
     image: prom/node-exporter

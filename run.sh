@@ -105,9 +105,9 @@ if [ ! -d "${CONTAINERD_ROOT_DIR}" ]; then
 fi
 
 if [ "${reset}" = true ]; then
-  docker compose up -d --force-recreate
+  docker compose up -d --force-recreate --build
 else
-  docker compose up -d
+  docker compose up -d --build
 fi
 
 cadvisor_container_status="unknown"
