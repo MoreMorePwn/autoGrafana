@@ -909,7 +909,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (container_name) ((rate(container_network_receive_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_receive_bytes_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -961,7 +961,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (container_name) ((rate(container_network_transmit_bytes_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_transmit_bytes_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }
@@ -1013,7 +1013,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (container_name) (((rate(container_network_receive_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_errors_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_receive_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m]) + rate(container_network_transmit_packets_dropped_total{job=~\"$job\", instance=~\"$instance\", id=~\"(/docker/[0-9a-f]{12,64}|/system\\\\.slice/docker-[0-9a-f]{12,64}\\\\.scope|.*/kubepods.*|.*/cri-containerd.*|.*/containerd.*[0-9a-f]{12,64}.*|.*/libpod.*)\"}[5m])) * on (id) group_left(container_name) autografana_container_info{container_name=~\"$container\", compose_project=~\"$stack\"})))",
+          "expr": "topk(10, sum by (container_name) (rate(autografana_container_network_receive_errors_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_transmit_errors_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_receive_packets_dropped_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m]) + rate(autografana_container_network_transmit_packets_dropped_total{container_name=~\"$container\", compose_project=~\"$stack\"}[5m])))",
           "refId": "A",
           "legendFormat": "{{container_name}}"
         }

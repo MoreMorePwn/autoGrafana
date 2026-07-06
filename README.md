@@ -52,7 +52,7 @@ docker context inspect --format '{{.Endpoints.docker.Host}}'
 docker info --format '{{.DockerRootDir}}'
 ```
 
-It also enables Docker and containerd discovery for cAdvisor, builds the local container-name exporter, then checks whether cAdvisor exposes real container cgroups after startup and prints the status in the final output. The dashboard joins cAdvisor metrics to Docker metadata so panels show container names instead of cgroup paths.
+It also enables Docker and containerd discovery for cAdvisor, builds the local container-name exporter, then checks whether cAdvisor exposes real container cgroups after startup and prints the status in the final output. The dashboard joins cAdvisor metrics to Docker metadata so panels show container names instead of cgroup paths. Container network panels use Docker stats exported by `container-name-exporter`, because some hosts only expose cAdvisor network counters for the root cgroup.
 
 ## Stop
 

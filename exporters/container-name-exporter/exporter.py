@@ -62,11 +62,56 @@ def container_ids(container_id):
     return ids
 
 
+def docker_stats(container_id):
+    try:
+        return docker_get(f"/containers/{container_id}/stats?stream=false")
+    except Exception:
+        return {}
+
+
+def network_totals(stats):
+    totals = {
+        "receive_bytes": 0,
+        "transmit_bytes": 0,
+        "receive_errors": 0,
+        "transmit_errors": 0,
+        "receive_dropped": 0,
+        "transmit_dropped": 0,
+    }
+
+    for iface in (stats.get("networks") or {}).values():
+        totals["receive_bytes"] += int(iface.get("rx_bytes") or 0)
+        totals["transmit_bytes"] += int(iface.get("tx_bytes") or 0)
+        totals["receive_errors"] += int(iface.get("rx_errors") or 0)
+        totals["transmit_errors"] += int(iface.get("tx_errors") or 0)
+        totals["receive_dropped"] += int(iface.get("rx_dropped") or 0)
+        totals["transmit_dropped"] += int(iface.get("tx_dropped") or 0)
+
+    return totals
+
+
+def emit_metric(lines, name, labels, value):
+    label_text = ",".join(label(k, v) for k, v in labels.items())
+    lines.append(f"{name}{{{label_text}}} {value}")
+
+
 def metrics():
     containers = docker_get("/containers/json?all=1")
     lines = [
         "# HELP autografana_container_info Docker container metadata keyed by cAdvisor cgroup id.",
         "# TYPE autografana_container_info gauge",
+        "# HELP autografana_container_network_receive_bytes_total Docker container network receive bytes.",
+        "# TYPE autografana_container_network_receive_bytes_total counter",
+        "# HELP autografana_container_network_transmit_bytes_total Docker container network transmit bytes.",
+        "# TYPE autografana_container_network_transmit_bytes_total counter",
+        "# HELP autografana_container_network_receive_errors_total Docker container network receive errors.",
+        "# TYPE autografana_container_network_receive_errors_total counter",
+        "# HELP autografana_container_network_transmit_errors_total Docker container network transmit errors.",
+        "# TYPE autografana_container_network_transmit_errors_total counter",
+        "# HELP autografana_container_network_receive_packets_dropped_total Docker container network receive dropped packets.",
+        "# TYPE autografana_container_network_receive_packets_dropped_total counter",
+        "# HELP autografana_container_network_transmit_packets_dropped_total Docker container network transmit dropped packets.",
+        "# TYPE autografana_container_network_transmit_packets_dropped_total counter",
     ]
 
     for container in containers:
@@ -86,6 +131,46 @@ def metrics():
             metric_labels = {"id": cadvisor_id, **base_labels}
             label_text = ",".join(label(k, v) for k, v in metric_labels.items())
             lines.append(f"autografana_container_info{{{label_text}}} 1")
+
+        stats = docker_stats(container_id)
+        totals = network_totals(stats)
+        network_labels = base_labels.copy()
+        emit_metric(
+            lines,
+            "autografana_container_network_receive_bytes_total",
+            network_labels,
+            totals["receive_bytes"],
+        )
+        emit_metric(
+            lines,
+            "autografana_container_network_transmit_bytes_total",
+            network_labels,
+            totals["transmit_bytes"],
+        )
+        emit_metric(
+            lines,
+            "autografana_container_network_receive_errors_total",
+            network_labels,
+            totals["receive_errors"],
+        )
+        emit_metric(
+            lines,
+            "autografana_container_network_transmit_errors_total",
+            network_labels,
+            totals["transmit_errors"],
+        )
+        emit_metric(
+            lines,
+            "autografana_container_network_receive_packets_dropped_total",
+            network_labels,
+            totals["receive_dropped"],
+        )
+        emit_metric(
+            lines,
+            "autografana_container_network_transmit_packets_dropped_total",
+            network_labels,
+            totals["transmit_dropped"],
+        )
 
     return "\n".join(lines) + "\n"
 
@@ -126,4 +211,3 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     server = ThreadingHTTPServer(("0.0.0.0", LISTEN_PORT), Handler)
     server.serve_forever()
-
