@@ -1,4 +1,16 @@
 services:
+  permissions:
+    image: alpine:3.23
+    user: root
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - prometheus-data:/prometheus
+    command: >
+      sh -c "
+        chown -R 472:472 /var/lib/grafana &&
+        chown -R 65534:65534 /prometheus
+      "
+
   prometheus:
     image: prom/prometheus
     container_name: autografana-prometheus
@@ -14,8 +26,12 @@ services:
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
-      - cadvisor-auth
-      - node-exporter
+      permissions:
+        condition: service_completed_successfully
+      cadvisor-auth:
+        condition: service_started
+      node-exporter:
+        condition: service_started
 
   grafana:
     image: grafana/grafana
@@ -33,7 +49,10 @@ services:
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
     depends_on:
-      - prometheus
+      permissions:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_started
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1

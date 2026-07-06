@@ -56,6 +56,23 @@ To remove persisted Grafana and Prometheus data too:
 docker compose down -v
 ```
 
+## Troubleshooting
+
+If Grafana or Prometheus is restarting, pull the latest project files and run:
+
+```bash
+./run.sh start
+```
+
+The stack includes a one-shot `permissions` container that fixes the Grafana and Prometheus named-volume ownership before those services start.
+
+If a service still restarts, check its logs:
+
+```bash
+docker logs autografana-grafana --tail=100
+docker logs autografana-prometheus --tail=100
+```
+
 ## Configuration
 
 Edit `.env` after the first run if you want different ports or credentials:
