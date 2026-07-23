@@ -47,6 +47,22 @@ htpasswd_line() {
   exit 1
 }
 
+dozzle_users_yaml() {
+  local image="$1"
+  local username="$2"
+  local password="$3"
+
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is required to generate Dozzle auth files." >&2
+    exit 1
+  fi
+
+  docker run --rm "${image}" generate "${username}" \
+    --password "${password}" \
+    --email "${username}@local" \
+    --name "${username}"
+}
+
 docker_context_socket() {
   if ! command -v docker >/dev/null 2>&1; then
     return 0
@@ -188,6 +204,8 @@ COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-autografana}"
 GRAFANA_PORT="${GRAFANA_PORT:-3000}"
 PROMETHEUS_PORT="${PROMETHEUS_PORT:-9090}"
 CADVISOR_PORT="${CADVISOR_PORT:-8080}"
+DOZZLE_PORT="${DOZZLE_PORT:-8088}"
+DOZZLE_IMAGE="${DOZZLE_IMAGE:-amir20/dozzle:latest}"
 CADVISOR_IMAGE="${CADVISOR_IMAGE:-gcr.io/cadvisor/cadvisor:v0.55.1}"
 DOCKER_SOCKET_PATH="$(detect_docker_socket_path)"
 DOCKER_RUN_DIR="$(detect_docker_run_dir "${DOCKER_SOCKET_PATH}")"
@@ -196,24 +214,31 @@ CONTAINERD_NAMESPACE="${CONTAINERD_NAMESPACE:-moby}"
 CONTAINERD_ROOT_DIR="$(detect_containerd_root_dir)"
 GRAFANA_ADMIN_USER="${GRAFANA_ADMIN_USER:-admin}"
 GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:-$(random_alnum 36)}"
+DOZZLE_ADMIN_USER="${DOZZLE_ADMIN_USER:-admin}"
+DOZZLE_ADMIN_PASSWORD="${DOZZLE_ADMIN_PASSWORD:-$(random_alnum 36)}"
 PROMETHEUS_BASIC_USER="${PROMETHEUS_BASIC_USER:-monitor_$(random_alnum 8)}"
 PROMETHEUS_BASIC_PASSWORD="${PROMETHEUS_BASIC_PASSWORD:-$(random_alnum 36)}"
 
 monitoring_dir="monitoring/generated"
 grafana_datasource_dir="${monitoring_dir}/grafana-datasources"
+dozzle_config_dir="conf/dozzle"
 prometheus_config="${monitoring_dir}/prometheus.yml"
 prometheus_web_config="${monitoring_dir}/prometheus-web.yml"
 cadvisor_htpasswd_file="${monitoring_dir}/cadvisor.htpasswd"
 grafana_datasource_config="${grafana_datasource_dir}/prometheus.yml"
+dozzle_users_file="${dozzle_config_dir}/users.yml"
 
 mkdir -p "${grafana_datasource_dir}"
-chmod 0755 "${monitoring_dir}" "${grafana_datasource_dir}"
+mkdir -p "${dozzle_config_dir}"
+chmod 0755 "${monitoring_dir}" "${grafana_datasource_dir}" "${dozzle_config_dir}"
 
 cat > .env <<EOF
 COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}
 GRAFANA_PORT=${GRAFANA_PORT}
 PROMETHEUS_PORT=${PROMETHEUS_PORT}
 CADVISOR_PORT=${CADVISOR_PORT}
+DOZZLE_PORT=${DOZZLE_PORT}
+DOZZLE_IMAGE=${DOZZLE_IMAGE}
 CADVISOR_IMAGE=${CADVISOR_IMAGE}
 DOCKER_SOCKET_PATH=${DOCKER_SOCKET_PATH}
 DOCKER_RUN_DIR=${DOCKER_RUN_DIR}
@@ -222,6 +247,8 @@ CONTAINERD_NAMESPACE=${CONTAINERD_NAMESPACE}
 CONTAINERD_ROOT_DIR=${CONTAINERD_ROOT_DIR}
 GRAFANA_ADMIN_USER=${GRAFANA_ADMIN_USER}
 GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+DOZZLE_ADMIN_USER=${DOZZLE_ADMIN_USER}
+DOZZLE_ADMIN_PASSWORD=${DOZZLE_ADMIN_PASSWORD}
 PROMETHEUS_BASIC_USER=${PROMETHEUS_BASIC_USER}
 PROMETHEUS_BASIC_PASSWORD=${PROMETHEUS_BASIC_PASSWORD}
 EOF
@@ -229,6 +256,7 @@ EOF
 prometheus_htpasswd="$(htpasswd_line -B "${PROMETHEUS_BASIC_USER}" "${PROMETHEUS_BASIC_PASSWORD}")"
 prometheus_bcrypt="${prometheus_htpasswd#*:}"
 cadvisor_htpasswd="$(htpasswd_line -m "${PROMETHEUS_BASIC_USER}" "${PROMETHEUS_BASIC_PASSWORD}")"
+dozzle_users_yaml "${DOZZLE_IMAGE}" "${DOZZLE_ADMIN_USER}" "${DOZZLE_ADMIN_PASSWORD}" > "${dozzle_users_file}"
 
 cat > "${prometheus_web_config}" <<EOF
 basic_auth_users:
@@ -297,9 +325,11 @@ chmod 0644 \
   "${prometheus_web_config}" \
   "${cadvisor_htpasswd_file}" \
   "${grafana_datasource_config}"
+chmod 0600 "${dozzle_users_file}"
 
 if [ "${quiet}" = false ]; then
   echo "Monitoring config written to ${monitoring_dir}"
   echo "Grafana: username=${GRAFANA_ADMIN_USER} password=${GRAFANA_ADMIN_PASSWORD}"
+  echo "Dozzle: username=${DOZZLE_ADMIN_USER} password=${DOZZLE_ADMIN_PASSWORD}"
   echo "Prometheus/cAdvisor: username=${PROMETHEUS_BASIC_USER} password=${PROMETHEUS_BASIC_PASSWORD}"
 fi

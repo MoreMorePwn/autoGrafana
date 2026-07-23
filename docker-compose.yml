@@ -56,6 +56,23 @@ services:
       prometheus:
         condition: service_started
 
+  dozzle:
+    image: ${DOZZLE_IMAGE:-amir20/dozzle:latest}
+    container_name: autografana-dozzle
+    restart: unless-stopped
+    environment:
+      - DOZZLE_HOSTNAME=${DOZZLE_HOSTNAME:-autografana}
+      - DOZZLE_NO_ANALYTICS=1
+      - DOZZLE_AUTH_PROVIDER=simple
+    volumes:
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      - dozzle-data:/data
+    secrets:
+      - source: dozzle-users
+        target: /data/users.yml
+    ports:
+      - "${DOZZLE_PORT:-8088}:8080"
+
   cadvisor:
     image: ${CADVISOR_IMAGE:-gcr.io/cadvisor/cadvisor:v0.55.1}
     container_name: autografana-cadvisor
@@ -123,3 +140,8 @@ services:
 volumes:
   grafana-data:
   prometheus-data:
+  dozzle-data:
+
+secrets:
+  dozzle-users:
+    file: ./conf/dozzle/users.yml

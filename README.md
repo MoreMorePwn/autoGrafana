@@ -1,12 +1,13 @@
 # autoGrafana
 
-autoGrafana is a small Docker Compose monitoring stack modeled after the monitoring setup in the local `CTFd` folder. It starts Grafana, Prometheus, cAdvisor, and node-exporter with generated credentials and a pre-provisioned Grafana datasource/dashboard.
+autoGrafana is a small Docker Compose monitoring stack modeled after the monitoring setup in the local `CTFd` folder. It starts Grafana, Prometheus, cAdvisor, Dozzle, and node-exporter with generated credentials and a pre-provisioned Grafana datasource/dashboard.
 
 ## What it runs
 
 - Grafana on `http://localhost:3000`
 - Prometheus on `http://localhost:9090` with basic auth
 - cAdvisor on `http://localhost:8080` behind an nginx basic-auth proxy
+- Dozzle on `http://localhost:8088` with generated simple auth for live Docker logs and container stats
 - node-exporter for host-level metrics used by Prometheus
 - container-name-exporter for Docker container name metadata used by Grafana
 
@@ -33,7 +34,7 @@ chmod +x run.sh monitoring/generate-config.sh
 ./run.sh start
 ```
 
-`start` creates `.env` if it does not exist, generates Prometheus/cAdvisor auth files under `monitoring/generated`, and starts the Compose stack with the current local data.
+`start` creates `.env` if it does not exist, generates Prometheus/cAdvisor auth files under `monitoring/generated`, generates Dozzle auth under `conf/dozzle`, and starts the Compose stack with the current local data.
 
 After startup, the script prints all local URLs and credentials. The credentials are stored in `.env`, which is intentionally ignored by Git.
 
@@ -119,13 +120,16 @@ Edit `.env` after the first run if you want different ports or credentials:
 GRAFANA_PORT=3000
 PROMETHEUS_PORT=9090
 CADVISOR_PORT=8080
+DOZZLE_PORT=8088
+DOZZLE_IMAGE=amir20/dozzle:latest
 CADVISOR_IMAGE=gcr.io/cadvisor/cadvisor:v0.55.1
 DOCKER_SOCKET_PATH=/var/run/docker.sock
 DOCKER_ROOT_DIR=/var/lib/docker
 GRAFANA_ADMIN_USER=admin
+DOZZLE_ADMIN_USER=admin
 ```
 
-Run `./run.sh start` again after editing `.env` to regenerate the Prometheus and Grafana datasource config from those values.
+Run `./run.sh start` again after editing `.env` to regenerate the Prometheus, Grafana datasource, and Dozzle auth config from those values.
 
 ## Git-tracked vs generated files
 
@@ -135,4 +139,5 @@ Generated and local-only files are ignored:
 
 - `.env`
 - `monitoring/generated/*`
+- `conf/dozzle/users.yml`
 - Docker named volumes managed by Compose

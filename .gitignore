@@ -1,5 +1,6 @@
 .env
 .data/
+conf/dozzle/users.yml
 monitoring/generated/*
 !monitoring/generated/.gitkeep
 !monitoring/generated/grafana-datasources/

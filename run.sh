@@ -70,6 +70,8 @@ if [ "${reset}" = true ]; then
   unset GRAFANA_PORT
   unset PROMETHEUS_PORT
   unset CADVISOR_PORT
+  unset DOZZLE_PORT
+  unset DOZZLE_IMAGE
   unset CADVISOR_IMAGE
   unset DOCKER_SOCKET_PATH
   unset DOCKER_RUN_DIR
@@ -78,8 +80,11 @@ if [ "${reset}" = true ]; then
   unset CONTAINERD_ROOT_DIR
   unset GRAFANA_ADMIN_USER
   unset GRAFANA_ADMIN_PASSWORD
+  unset DOZZLE_ADMIN_USER
+  unset DOZZLE_ADMIN_PASSWORD
   unset PROMETHEUS_BASIC_USER
   unset PROMETHEUS_BASIC_PASSWORD
+  rm -f conf/dozzle/users.yml
   export COMPOSE_PROJECT_NAME="${fresh_compose_project}"
 fi
 
@@ -166,10 +171,15 @@ autoGrafana is running.
 Grafana:    http://localhost:${GRAFANA_PORT}
 Prometheus: http://localhost:${PROMETHEUS_PORT}
 cAdvisor:   http://localhost:${CADVISOR_PORT}
+Dozzle:     http://localhost:${DOZZLE_PORT}
 
 Grafana login:
   username: ${GRAFANA_ADMIN_USER}
   password: ${GRAFANA_ADMIN_PASSWORD}
+
+Dozzle login:
+  username: ${DOZZLE_ADMIN_USER}
+  password: ${DOZZLE_ADMIN_PASSWORD}
 
 Prometheus and cAdvisor basic auth:
   username: ${PROMETHEUS_BASIC_USER}
